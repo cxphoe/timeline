@@ -23,7 +23,7 @@ const getRootPath = () => {
 const getPublicPath = () => {
   const envArgs = ArgParser.getEnvArgs();
   const {
-    PUBLIC_PATH = '/',
+    PUBLIC_PATH = '.',
   } = envArgs;
   let result = slash(PUBLIC_PATH.trim());
   if (!result.endsWith('/')) {
@@ -37,7 +37,7 @@ const ROOT_PATH = getRootPath();
 /** path of the packaged static files (based on ROOT_PATH) */
 const STATIC_PATH = 'static';
 /** path of the packaged template files (based on ROOT_PATH) */
-const TEMPLATE_PATH = 'view';
+const TEMPLATE_PATH = '.';
 /** public path of static files */
 const PUBLIC_PATH = getPublicPath();
 
