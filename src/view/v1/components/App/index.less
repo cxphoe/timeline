@@ -1,0 +1,43 @@
+#app {
+  width: 550px;
+  margin: 0 auto 150px auto;
+}
+
+.editor-status {
+  margin: 16px 0;
+}
+
+.content-area {
+  margin-top: 16px;
+  font-family: menlo;
+
+  textarea {
+    font-family: menlo;
+  }
+}
+
+.item-input {
+  width: 400px;
+  min-height: 50px;
+}
+
+.item-list {
+  > * {
+    display: flex;
+    line-height: 36px;
+    border-bottom: 1px solid #ddd;
+
+    &:first-of-type {
+      border-bottom: 1px solid #ddd;
+    }
+
+    > span {
+      display: inline-block;
+
+      &:first-of-type, &:nth-of-type(2) {
+        width: 120px;
+        flex-shrink: 0;
+      }
+    }
+  }
+}
