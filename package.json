@@ -4,9 +4,9 @@
   "description": "",
   "scripts": {
     "start": "docker-compose up dev",
-    "build": "webpack --config=config/webpack.conf.prod.js",
+    "build": "PUBLIC_PATH=. webpack --config=config/webpack.conf.prod.js",
     "dev": "webpack-dev-server --hot --config=config/webpack.conf.dev.js",
-    "dev:ie8": "webpack-dev-server-sio --config=config/webpack.conf.ie8.js" 
+    "dev:ie8": "webpack-dev-server-sio --config=config/webpack.conf.ie8.js"
   },
   "author": "",
   "license": "ISC",
@@ -16,7 +16,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.2.3",
     "@babel/runtime": "^7.2.0"  ,
-    "cross-env": "^5.2.0"      
+    "cross-env": "^5.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.1.6",

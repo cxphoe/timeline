@@ -11,6 +11,8 @@ const {
 const entries = Object.keys(defaultConfig.entry);
 const htmlHotPlugin = new HtmlWebpackHotPlugin();
 
+console.log(defaultConfig.entry)
+
 module.exports = merge(defaultConfig, {
   mode: 'development',
   devtool: 'cheap-module-eval-source-map',
@@ -53,8 +55,9 @@ module.exports = merge(defaultConfig, {
     htmlHotPlugin,
   ],
   devServer: {
-    contentBase: ROOT_PATH,
+    // contentBase: ROOT_PATH,
     host: '127.0.0.1',
+    hot: true,
     compress: true,
     port: 8000,
     open: true,

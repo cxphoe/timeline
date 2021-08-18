@@ -2,8 +2,18 @@ import './index.less'
 
 /**
  * @typedef {{start: number; end: number}} TimeRange
- * @typedef {{text: string; timeRanges: TimeRange[]}} Item
+ * @typedef {{id: string; text: string; timeRanges: TimeRange[]}} Item
  */
+
+const isDev = process.env.NODE_ENV === 'development'
+
+const sum = (...nums) => {
+  let res = 0
+  for (let n of nums) {
+    res += n
+  }
+  return res
+}
 
 class App {
   static new () {
@@ -17,10 +27,37 @@ class App {
     this.savedItems = []
     /** @type {HTMLElement} */
     this.elt = null
+    /** @type {Set<string>} */
+    this.selectedItems = new Set()
 
     this.running = true
 
     this.updateStatus()
+
+    isDev && this.debug()
+  }
+
+  debug() {
+    this.savedItems = [
+      {
+        id: '1',
+        text: 'test 111',
+        timeRanges: [{
+          start: Date.now() - 1000 * 1000,
+          end: Date.now(),
+        }],
+      },
+      {
+        id: '2',
+        text: 'test 333',
+        timeRanges: [{
+          start: Date.now() - 1000 * 1000,
+          end: Date.now(),
+        }],
+      },
+    ]
+    this.selectedItems.add('1')
+    this.selectedItems.add('2')
   }
 
   /**
@@ -38,6 +75,10 @@ class App {
         input.value = ''
       }
     }
+  }
+
+  uid() {
+    return `${Math.random().toString().slice(0, 5)}-${Date.now().toString().slice(10)}`
   }
 
   createItem(text) {
@@ -58,11 +99,13 @@ class App {
     console.log(this.savedItems, this.currentItem)
 
     this.currentItem = {
+      id: this.uid(),
       text,
       timeRanges: [
         { start: now },
       ],
     }
+    this.selectedItems.add(this.currentItem.id)
 
     this.updateStatus(true)
     this.update()
@@ -104,6 +147,17 @@ class App {
     this.updateStatus(false)
   }
 
+  onListClick = (e) => {
+    let item = e.target.closest('.timeline-item')
+    let id = item.dataset.id
+    if (this.selectedItems.has(id)) {
+      this.selectedItems.delete(id)
+    } else {
+      this.selectedItems.add(id)
+    }
+    this.update()
+  }
+
   update() {
     let itemList = this.elt.querySelector('.item-list')
 
@@ -121,6 +175,22 @@ class App {
       let hour = padStart(date.getHours(), 2)
       let minutes = padStart(date.getMinutes(), 2)
       return `${hour}:${minutes}`
+    }
+
+    const formatMilliseconds = (n) => {
+      let seconds = Math.floor(n / 1000)
+      let minutes = Math.floor(seconds / 60)
+      seconds = seconds % 60
+
+      let timeCount = ''
+      if (minutes) {
+        timeCount += `${minutes}m`
+      }
+
+      if (seconds) {
+        timeCount += `${seconds}s`
+      }
+      return timeCount
     }
 
     /**
@@ -143,27 +213,31 @@ class App {
           consumed += range.end - range.start
         }
       })
-      let seconds = Math.floor(consumed / 1000)
-      let minutes = Math.floor(seconds / 60)
-      seconds = seconds % 60
 
-      let timeCount = ''
-      if (minutes) {
-        timeCount += `${minutes}m`
-      }
-
-      if (seconds) {
-        timeCount += `${seconds}s`
-      }
+      let timeCount = formatMilliseconds(consumed)
 
       return `
-        <div>
+        <div
+          class="timeline-item ${this.selectedItems.has(item.id) ? 'selected' : ''}"
+          data-id="${item.id}"
+        >
           <span>${timeRange}</span>
           <span>${timeCount}</span>
           <span>${item.text}</span>
         </div>
       `
     }
+
+    let selected = this.savedItems.filter((item) => this.selectedItems.has(item.id))
+    let totalTime = sum(...selected.map((item) => {
+      let s = sum(
+        ...item.timeRanges.map((range) => {
+          return range.end - range.start
+        })
+      )
+      return s
+    }))
+    let totalTimeText = formatMilliseconds(totalTime)
 
     let html = `
     <div>
@@ -173,9 +247,18 @@ class App {
     </div>
     ${this.savedItems.map(renderItem).join('')}
     ${this.currentItem ? renderItem(this.currentItem) : ''}
+    <div class="timeline-stat-item">
+      <span>统计选中项时间</span>
+      <span>${totalTimeText}</span>
+      <span></span>
+    </div>
     `
 
     itemList.innerHTML = html
+  }
+
+  updateTotal() {
+
   }
 
   updateStatus(v) {
@@ -221,10 +304,16 @@ class App {
     startBtn.addEventListener('click', this.start)
     startFinish.addEventListener('click', this.finish)
 
+    let itemList = div.querySelector('.item-list')
+    itemList.addEventListener('click', this.onListClick)
+
+
     element.appendChild(div)
 
     this.elt = div
     this.updateStatus(true)
+    this.update()
+
   }
 }
 
