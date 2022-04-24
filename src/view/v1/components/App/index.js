@@ -1,4 +1,5 @@
 import './index.less'
+import { database } from './utils'
 
 /**
  * @typedef {{start: number; end: number}} TimeRange
@@ -6,6 +7,10 @@ import './index.less'
  */
 
 const isDev = process.env.NODE_ENV === 'development'
+
+let timer = null
+
+const log = console.log
 
 const sum = (...nums) => {
   let res = 0
@@ -35,6 +40,7 @@ class App {
     this.updateStatus()
 
     isDev && this.debug()
+    this.load()
   }
 
   debug() {
@@ -60,6 +66,36 @@ class App {
     this.selectedItems.add('2')
   }
 
+  load() {
+    const data = database.load()
+
+    if (data) {
+      this.savedItems = data.saved || []
+      this.currentItem = data.current || null
+    }
+  }
+
+  loopSave() {
+    const data = {
+      saved: this.savedItems,
+      current: this.currentItem,
+    }
+
+    database.save(data)
+
+    timer = setTimeout(() => {
+      this.loopSave()
+    }, 1000);
+  }
+
+  clearData = () => {
+    database.clear()
+    this.savedItems = []
+    this.currentItem = null
+    this.pause = true
+    this.update()
+  }
+
   /**
    *
    * @param {KeyboardEvent} e 输入事件
@@ -78,7 +114,7 @@ class App {
   }
 
   uid() {
-    return `${Math.random().toString().slice(0, 5)}-${Date.now().toString().slice(10)}`
+    return `${Math.random().toString().slice(-5, -1)}-${Date.now().toString().slice(-4)}`
   }
 
   createItem(text) {
@@ -147,15 +183,50 @@ class App {
     this.updateStatus(false)
   }
 
+  bindListEvents(elt) {
+    let elts = elt.querySelectorAll('div[contenteditable]')
+
+    elts.forEach((e) => {
+      e.addEventListener('blur', (event) => {
+        let item = e.closest('.timeline-item')
+        let id = item.dataset.id
+
+        let edited = null
+        if (this.currentItem && this.currentItem.id === id) {
+          edited = this.currentItem
+        } else {
+          edited = this.savedItems.find((i) => i.id === id)
+        }
+
+        if (edited) {
+          let text = event.target.innerHTML
+          edited.text = text
+        }
+      })
+    })
+  }
+
   onListClick = (e) => {
-    let item = e.target.closest('.timeline-item')
-    let id = item.dataset.id
-    if (this.selectedItems.has(id)) {
-      this.selectedItems.delete(id)
-    } else {
-      this.selectedItems.add(id)
+    /** @type {HTMLElement} */
+    let elt = e.target
+    let item = elt.closest('.timeline-item')
+
+    if (item) {
+      let id = item.dataset.id
+
+      if (
+        !elt.classList.contains('timeline-item-text') &&
+        !elt.parentElement.classList.contains('timeline-item-text')
+      ) {
+        if (this.selectedItems.has(id)) {
+          this.selectedItems.delete(id)
+        } else {
+          this.selectedItems.add(id)
+        }
+
+        this.update()
+      }
     }
-    this.update()
   }
 
   update() {
@@ -222,8 +293,8 @@ class App {
           data-id="${item.id}"
         >
           <span>${timeRange}</span>
+          <div class="timeline-item-text" contenteditable="true">${item.text}</div>
           <span>${timeCount}</span>
-          <span>${item.text}</span>
         </div>
       `
     }
@@ -242,8 +313,8 @@ class App {
     let html = `
     <div>
       <span>时间段</span>
-      <span>计时</span>
       <span>描述</span>
+      <span>计时</span>
     </div>
     ${this.savedItems.map(renderItem).join('')}
     ${this.currentItem ? renderItem(this.currentItem) : ''}
@@ -255,6 +326,8 @@ class App {
     `
 
     itemList.innerHTML = html
+
+    this.bindListEvents(itemList)
   }
 
   updateTotal() {
@@ -280,6 +353,7 @@ class App {
         <button class="btn-stop">暂停计时</button>
         <button class="btn-start">开始计时</button>
         <button class="btn-finish">结束当前任务</button>
+        <button class="btn-cleardata">清除数据</button>
       </div>
       <div class="content-area">
         <textarea class="item-input"></textarea>
@@ -300,9 +374,11 @@ class App {
     let stopBtn = div.querySelector('.btn-stop')
     let startBtn = div.querySelector('.btn-start')
     let startFinish = div.querySelector('.btn-finish')
+    let clear = div.querySelector('.btn-cleardata')
     stopBtn.addEventListener('click', this.pause)
     startBtn.addEventListener('click', this.start)
     startFinish.addEventListener('click', this.finish)
+    clear.addEventListener('click', this.clearData)
 
     let itemList = div.querySelector('.item-list')
     itemList.addEventListener('click', this.onListClick)
@@ -314,6 +390,7 @@ class App {
     this.updateStatus(true)
     this.update()
 
+    this.loopSave()
   }
 }
 

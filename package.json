@@ -6,7 +6,8 @@
     "start": "docker-compose up dev",
     "build": "PUBLIC_PATH=. webpack --config=config/webpack.conf.prod.js",
     "dev": "webpack-dev-server --hot --config=config/webpack.conf.dev.js",
-    "dev:ie8": "webpack-dev-server-sio --config=config/webpack.conf.ie8.js"
+    "dev:ie8": "webpack-dev-server-sio --config=config/webpack.conf.ie8.js",
+    "n": "yarn cache clean && yarn install --registry=https://registry.npm.taobao.org"
   },
   "author": "",
   "license": "ISC",
